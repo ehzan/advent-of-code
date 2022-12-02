@@ -197,8 +197,51 @@ def puzzle8(filepath):
     return None
 
 
+def puzzle9(filepath):
+    print('===puzzle9===')
+    with open(filepath, 'r', encoding='UTF-8') as f:
+        filedata = f.read()
+    data = filedata[:-1].split('\n')
+    segments = []
+    for line in data:
+        l = re.split(r' -> |,', line)
+        p1 = {'x': int(l[0]), 'y': int(l[1])}
+        p2 = {'x': int(l[2]), 'y': int(l[3])}
+        segments.append([p1, p2])
+    segments = list(filter(lambda seg: seg[0]['x'] == seg[1]['x'] or seg[0]['y'] == seg[1]['y'], segments))
+    # print(*segments, sep='\n')
+    maxX = 0
+    for seg in segments:
+        maxX = max(maxX, seg[0]['x'], seg[1]['x'])
+    print(maxX)
+    points = [[]] * (maxX + 1)
+    print(points)
+    for seg in segments:
+        if seg[0]['x'] == seg[1]['x']:
+            print('x=', seg[0]['x'])
+            y1 = min(seg[0]['y'], seg[1]['y'])
+            y2 = max(seg[0]['y'], seg[1]['y'])
+            for y in range(y1, y2 + 1):
+                points[seg[0]['x']].append(y)
+        elif seg[0]['y'] == seg[1]['y']:
+            print('y=', seg[0]['y'])
+            x1 = min(seg[0]['x'], seg[1]['x'])
+            x2 = max(seg[0]['x'], seg[1]['x'])
+            for x in range(x1, x2 + 1):
+                points[x].append(seg[0]['y'])
+    seen = set()
+    for x in range(maxX):
+        print(x)
+        seen.clear()
+        y_list = {y for y in points[x] if y in seen or seen.add(y)}
+        print(y_list)
+
+    # print(points)
+    return None
+
+
 def main():
-    print('Answer #8:', puzzle8('day4.txt'), )
+    print('Answer #9:', puzzle9('day5.txt'), )
     return
 
 
