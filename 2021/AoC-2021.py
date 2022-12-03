@@ -2,11 +2,12 @@ from day1 import *
 from day2 import *
 from day3 import *
 from day4 import *
+from day5 import *
 
 
 def main():
-    print('Answer #7:', puzzle7(), )
-    print('Answer #8:', puzzle8(), )
+    print('Answer #9:', puzzle9(), )
+    print('Answer #10:', puzzle10(), )
     return
 
 
