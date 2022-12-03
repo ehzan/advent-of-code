@@ -1,4 +1,4 @@
-from AoC2022 import readfile
+from filehandling import readfile
 import functools
 
 
@@ -29,4 +29,4 @@ def puzzle2(input_file='day1.txt'):
                 max2, max3 = max3, max2
             if max2 > max1:
                 max1, max2 = max2, max1
-    return max1 + max2 + max3
+    return max1, max2, max3, max1 + max2 + max3
