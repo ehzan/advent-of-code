@@ -5,12 +5,12 @@ from day4 import *
 from day5 import *
 from day6 import *
 from day7 import *
+from day8 import *
 
 
 def main():
-    print('Answer #13:', puzzle13(), )
-    print('Answer #13b:', puzzle13b(), )
-    print('Answer #14:', puzzle14(), )
+    print('Answer #15:', puzzle15(), )
+    print('Answer #16:', puzzle16(), )
 
 
 if __name__ == '__main__':
