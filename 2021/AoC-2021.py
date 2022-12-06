@@ -10,11 +10,12 @@ from day9 import *
 from day10 import *
 from day11 import *
 from day12 import *
+from day13 import *
 
 
 def main():
-    print('Answer #23:', puzzle23(), )
-    print('Answer #24:', puzzle24(), )
+    print('Answer #25:', puzzle25(), )
+    print('Answer #26:', puzzle26(), )
 
 
 if __name__ == '__main__':
