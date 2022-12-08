@@ -30,7 +30,7 @@ def get_filesystem(terminal_output):
 
 
 def puzzle13(input_file='day7.txt'):
-    data = fileHandle.readfile(input_file).split('\n')
+    data = fileHandle.readfile(input_file).splitlines()
     dirs = get_filesystem(data)
     _sum = 0
     for path in dirs:
@@ -39,7 +39,7 @@ def puzzle13(input_file='day7.txt'):
 
 
 def puzzle14(input_file='day7.txt'):
-    data = fileHandle.readfile(input_file).split('\n')
+    data = fileHandle.readfile(input_file).splitlines()
     dirs = get_filesystem(data)
     needed_space = dirs['root'] - 40000000
     min_size = dirs['root']
