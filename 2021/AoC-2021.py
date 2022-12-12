@@ -1,22 +1,8 @@
-from day1 import *
-from day2 import *
-from day3 import *
-from day4 import *
-from day5 import *
-from day6 import *
-from day7 import *
-from day8 import *
-from day9 import *
-from day10 import *
-from day11 import *
-from day12 import *
-from day13 import *
-from day14 import *
-
-
 def main():
-    print('Answer #27:', puzzle27(), )
-    print('Answer #28:', puzzle28(), )
+    for day in [15]:
+        exec('import day{}'.format(day))
+        print('Answer #{}: '.format(2 * day - 1), eval('day{}.puzzle{}()'.format(day, 2 * day - 1)), )
+        print('Answer #{}: '.format(2 * day), eval('day{}.puzzle{}()'.format(day, 2 * day)), )
 
 
 if __name__ == '__main__':
