@@ -1,46 +1,46 @@
-from fileHandle import readfile
-import re
+import fileHandle, re
 
 
-def puzzle9(input_file='day5.txt'):
-    data = readfile(input_file).split('\n\n')
-    stacks = data[0].split('\n')
-    n_stacks = len(stacks[0]) // 4 + 1
-    stack = [[] for i in range(0, n_stacks + 1)]
-    for line in range(len(stacks) - 2, -1, -1):
+def get_stack(stacks_data):
+    lines = stacks_data.splitlines()
+    n_stacks = len(lines[0]) // 4 + 1
+    stacks = [[] for i in range(n_stacks + 1)]
+    for l in range(len(lines) - 2, -1, -1):
         for i in range(1, n_stacks + 1):
-            if stacks[line][4 * i - 3] != ' ':
-                stack[i].append(stacks[line][4 * i - 3])
-    # print(*stack)
-    commands = data[1].split('\n')
-    for line in range(0, len(commands)):
-        cmd = re.split(r'move | from | to ', commands[line])
+            if lines[l][4 * i - 3] != ' ':
+                stacks[i].append(lines[l][4 * i - 3])
+    return stacks
+
+
+def puzzle9(input_file):
+    data = fileHandle.readfile(input_file, strip=False).split('\n\n')
+    stacks = get_stack(data[0])
+    commands = data[1].splitlines()
+    for i in range(len(commands)):
+        cmd = re.split(r'move | from | to ', commands[i])
         number, origin, destination = int(cmd[1]), int(cmd[2]), int(cmd[3])
-        for i in range(number):
-            stack[destination].append(stack[origin].pop())
+        for j in range(number):
+            stacks[destination].append(stacks[origin].pop())
     tops = ''
-    for i in range(1, n_stacks + 1):
-        tops += stack[i][-1]
+    for i in range(1, len(stacks)):
+        tops += stacks[i][-1]
     return tops
 
 
-def puzzle10(input_file='day5.txt'):
-    data = readfile(input_file).split('\n\n')
-    stacks = data[0].split('\n')
-    n_stacks = len(stacks[0]) // 4 + 1
-    stack = [[] for i in range(0, n_stacks + 1)]
-    for line in range(len(stacks) - 2, -1, -1):
-        for i in range(1, n_stacks + 1):
-            if stacks[line][4 * i - 3] != ' ':
-                stack[i].append(stacks[line][4 * i - 3])
-    # print(*stack)
-    commands = data[1].split('\n')
-    for line in range(0, len(commands)):
-        cmd = re.split(r'move | from | to ', commands[line])
+def puzzle10(input_file):
+    data = fileHandle.readfile(input_file, strip=False).split('\n\n')
+    stacks = get_stack(data[0])
+    commands = data[1].splitlines()
+    for i in range(len(commands)):
+        cmd = re.split(r'move | from | to ', commands[i])
         number, origin, destination = int(cmd[1]), int(cmd[2]), int(cmd[3])
-        stack[destination] += stack[origin][-number:]
-        stack[origin] = stack[origin][:-number]
+        stacks[destination] += stacks[origin][-number:]
+        stacks[origin] = stacks[origin][:-number]
     tops = ''
-    for i in range(1, n_stacks + 1):
-        tops += stack[i][-1]
+    for i in range(1, len(stacks)):
+        tops += stacks[i][-1]
     return tops
+
+
+print('Day #5, Part One:', puzzle9('day5.txt'))
+print('Day #5, Part Two:', puzzle10('day5.txt'))
