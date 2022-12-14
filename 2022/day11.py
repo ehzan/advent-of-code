@@ -33,9 +33,9 @@ def read_monkey_attributes(data):
     return monkeys, worry_level
 
 
-def puzzle21(input_file='day11.txt'):
-    data = fileHandle.readfile(input_file)
-    monkeys, worry_level = read_monkey_attributes(data.split('\n\n'))
+def puzzle21(input_file):
+    data = fileHandle.readfile(input_file).split('\n\n')
+    monkeys, worry_level = read_monkey_attributes(data)
     for round in range(20):
         for monkey in monkeys:
             for item in monkey['items']:
@@ -50,13 +50,12 @@ def puzzle21(input_file='day11.txt'):
     return activities[-1] * activities[-2]
 
 
-def puzzle22(input_file='day11.txt'):
-    data = fileHandle.readfile(input_file)
-    monkeys, worry_level = read_monkey_attributes(data.split('\n\n'))
+def puzzle22(input_file):
+    data = fileHandle.readfile(input_file).split('\n\n')
+    monkeys, worry_level = read_monkey_attributes(data)
     common_multiple = 1
     for monkey in monkeys:
         common_multiple *= monkey['test_divisor']
-
     for round in range(10000):
         for monkey in monkeys:
             for item in monkey['items']:
@@ -69,3 +68,7 @@ def puzzle22(input_file='day11.txt'):
     activities = sorted([monkey['activity'] for monkey in monkeys])
     print(activities)
     return activities[-1] * activities[-2]
+
+
+print('Day #11, Part One:', puzzle21('day11.txt'))
+print('Day #11, Part Two:', puzzle22('day11.txt'))
