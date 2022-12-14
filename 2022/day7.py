@@ -29,7 +29,7 @@ def get_filesystem(terminal_output):
     return dirs
 
 
-def puzzle13(input_file='day7.txt'):
+def puzzle13(input_file):
     data = fileHandle.readfile(input_file).splitlines()
     dirs = get_filesystem(data)
     _sum = 0
@@ -38,7 +38,7 @@ def puzzle13(input_file='day7.txt'):
     return _sum
 
 
-def puzzle14(input_file='day7.txt'):
+def puzzle14(input_file):
     data = fileHandle.readfile(input_file).splitlines()
     dirs = get_filesystem(data)
     needed_space = dirs['root'] - 40000000
@@ -48,4 +48,8 @@ def puzzle14(input_file='day7.txt'):
         if needed_space < dirs[path] < min_size:
             min_size = dirs[path]
             best_choice = path
-    return best_choice, dirs[best_choice]
+    return min_size
+
+
+print('Day #7, Part One:', puzzle13('day7.txt'))
+print('Day #7, Part Two:', puzzle14('day7.txt'))
