@@ -20,7 +20,7 @@ def pull(head, tail):
     return tail
 
 
-def puzzle17(input_file='day9.txt'):
+def puzzle17(input_file):
     data = fileHandle.readfile(input_file)
     steps = [(line.split(' ')[0], int(line.split(' ')[1])) for line in data.splitlines()]
     H = [0, 0]
@@ -34,7 +34,7 @@ def puzzle17(input_file='day9.txt'):
     return len(set(visited))
 
 
-def puzzle18(input_file='day9.txt'):
+def puzzle18(input_file):
     data = fileHandle.readfile(input_file)
     steps = [(line.split(' ')[0], int(line.split(' ')[1])) for line in data.splitlines()]
     rope = [[0, 0] for i in range(10)]
@@ -46,3 +46,7 @@ def puzzle18(input_file='day9.txt'):
                 pull(rope[j - 1], rope[j])
             visited.add((rope[9][0], rope[9][1]))
     return len(set(visited))
+
+
+print('Day #9, Part One:', puzzle17('day9.txt'))
+print('Day #9, Part Two:', puzzle18('day9.txt'))
