@@ -29,24 +29,24 @@ def shortest_path(S, E, h):
     path_length[S[0]][S[1]] = 0
     check_list = {S}
     while check_list:
-        p = check_list.pop()
-        for a in adjacent(p, h):
-            if ord(h[a[0]][a[1]]) <= ord(h[p[0]][p[1]]) + 1 and \
-                    path_length[a[0]][a[1]] > path_length[p[0]][p[1]] + 1:
-                path_length[a[0]][a[1]] = path_length[p[0]][p[1]] + 1
+        point = check_list.pop()
+        for a in adjacent(point, h):
+            if ord(h[a[0]][a[1]]) <= ord(h[point[0]][point[1]]) + 1 and \
+                    path_length[a[0]][a[1]] > path_length[point[0]][point[1]] + 1:
+                path_length[a[0]][a[1]] = path_length[point[0]][point[1]] + 1
                 if a != E:
                     check_list.add(a)
     return path_length[E[0]][E[1]]
 
 
-def puzzle23(input_file='day12.txt'):
+def puzzle23(input_file):
     data = fileHandle.readfile(input_file)
     h = [[ch for ch in line] for line in data.splitlines()]
     S, E = find_S_E(h)
     return shortest_path(S, E, h)
 
 
-def puzzle24b(input_file='day12.txt'):
+def puzzle24b(input_file):
     data = fileHandle.readfile(input_file)
     h = [[ch for ch in line] for line in data.splitlines()]
     S, E = find_S_E(h)
@@ -59,25 +59,33 @@ def puzzle24b(input_file='day12.txt'):
     return min(shortest_paths)
 
 
-def puzzle24(input_file='day12.txt'):
-    data = fileHandle.readfile(input_file)
-    h = [[ch for ch in line] for line in data.splitlines()]
-    S, E = find_S_E(h)
+def reverse_shortest_path(E, h):
     MAX_PATH_LENGTH = len(h) * len(h[0])
     path_length = [[MAX_PATH_LENGTH] * len(h[i]) for i in range(len(h))]
     path_length[E[0]][E[1]] = 0
     check_list = {E}
     while check_list:
-        p = check_list.pop()
-        for a in adjacent(p, h):
-            if ord(h[a[0]][a[1]]) >= ord(h[p[0]][p[1]]) - 1 and \
-                    path_length[a[0]][a[1]] > path_length[p[0]][p[1]] + 1:
-                path_length[a[0]][a[1]] = path_length[p[0]][p[1]] + 1
+        point = check_list.pop()
+        for a in adjacent(point, h):
+            if ord(h[a[0]][a[1]]) >= ord(h[point[0]][point[1]]) - 1 and \
+                    path_length[a[0]][a[1]] > path_length[point[0]][point[1]] + 1:
+                path_length[a[0]][a[1]] = path_length[point[0]][point[1]] + 1
                 check_list.add(a)
+    return path_length
 
-    shortest_path = MAX_PATH_LENGTH
+
+def puzzle24(input_file):
+    data = fileHandle.readfile(input_file)
+    h = [[ch for ch in line] for line in data.splitlines()]
+    S, E = find_S_E(h)
+    path_length = reverse_shortest_path(E, h)
+    _shortest_path = len(h) * len(h[0])
     for i in range(len(h)):
         for j in range(len(h[i])):
-            if h[i][j] == 'a' and path_length[i][j] < shortest_path:
-                shortest_path = path_length[i][j]
-    return shortest_path
+            if h[i][j] == 'a' and path_length[i][j] < _shortest_path:
+                _shortest_path = path_length[i][j]
+    return _shortest_path
+
+
+print('Day #12, Part One:', puzzle23('day12.txt'))
+print('Day #12, Part Two:', puzzle24('day12.txt'))
