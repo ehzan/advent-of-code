@@ -21,14 +21,16 @@ def scan_cave(data):
 
 def pour_sand(cave, max_y):
     x, y = 500, 0
-    while y < max_y and cave[x][y + 1] * cave[x - 1][y + 1] * cave[x + 1][y + 1] == 0:
+    while y < max_y:
         if cave[x][y + 1] == 0:
             y += 1
         elif cave[x - 1][y + 1] == 0:
             x, y = x - 1, y + 1
         elif cave[x + 1][y + 1] == 0:
             x, y = x + 1, y + 1
-    cave[x][y] = 1
+        else:
+            cave[x][y] = 1
+            break
     return x, y
 
 
@@ -47,7 +49,7 @@ def puzzle28(input_file):
     data = fileHandle.readfile(input_file).splitlines()
     cave, max_y = scan_cave(data)
     max_y += 2
-    for x in range(1000):
+    for x in range(len(cave)):
         cave[x][max_y] = 1
     sand = 0
     y = True
