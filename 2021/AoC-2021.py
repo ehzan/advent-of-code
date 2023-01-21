@@ -1,8 +1,10 @@
 def main():
-    for day in [15]:
-        exec('import day{}'.format(day))
-        print('Answer #{}: '.format(2 * day - 1), eval('day{}.puzzle{}()'.format(day, 2 * day - 1)), )
-        print('Answer #{}: '.format(2 * day), eval('day{}.puzzle{}()'.format(day, 2 * day)), )
+    for day in [17]:
+        exec(f'import day{day}')
+        print(f'Day #{day}, Part One:', eval(f'day{day}.puzzle{2 * day - 1}("input.txt")'), )
+        #
+        # print(f'Day #{day}, Part One:', eval(f'day{day}.puzzle{2 * day - 1}("day{day}.txt")'), )
+        # print(f'Day #{day}, Part Two:', eval(f'day{day}.puzzle{2 * day}("day{day}.txt")'), )
 
 
 if __name__ == '__main__':

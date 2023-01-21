@@ -25,12 +25,12 @@ def check_neighbors(check_list, basin, data):
     pos = check_list.pop()
     i, j = pos[0], pos[1]
     if data[i][j] < '9':
-        basin.add(pos)
+        basin.lplus(pos)
         for neighbor in {(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)}:
             if 0 <= neighbor[0] < len(data) and \
                     0 <= neighbor[1] < len(data[neighbor[0]]) and \
                     not neighbor in basin:
-                check_list.add(neighbor)
+                check_list.lplus(neighbor)
     return check_neighbors(check_list, basin, data)
 
 
