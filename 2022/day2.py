@@ -1,32 +1,46 @@
-import fileHandle
+import file_handle
 
 
-def puzzle3(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    score = 0
-    for c in data:
-        score += ord(c[2]) - ord('X') + 1
-        match ord(c[2]) - ord('X') - ord(c[0]) + ord('A'):
+def puzzle3(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    games = [row.split(' ') for row in data.splitlines()]
+
+    total_score = 0
+    for [hand1, hand2] in games:
+        hand1_value = ord(hand1) - ord('A') + 1
+        hand2_value = ord(hand2) - ord('X') + 1
+        match hand2_value - hand1_value:
+            case -1 | 2:
+                result = 0
             case 0:
-                score += 3
+                result = 1
             case 1 | -2:
-                score += 6
-    return score
+                result = 2
+        total_score += 3 * result + hand2_value
+
+    return total_score
 
 
-def puzzle4(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    score = 0
-    for c in data:
-        match c[2]:
-            case 'X':
-                score += ord(c[0]) - ord('A') if c[0] != 'A' else 3
-            case 'Y':
-                score += 3 + ord(c[0]) - ord('A') + 1
-            case 'Z':
-                score += 6 + (ord(c[0]) - ord('A') + 2 if c[0] != 'C' else 1)
-    return score
+def puzzle4(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    games = [row.split(' ') for row in data.splitlines()]
+
+    total_score = 0
+    for [hand1, result] in games:
+        hand1_value = ord(hand1) - ord('A') + 1
+        result = ord(result) - ord('X')
+        match result:
+            case 0:  # lose
+                hand2_value = (hand1_value + 1) % 3 + 1
+            case 1:  # draw
+                hand2_value = hand1_value
+            case 2:  # win
+                hand2_value = hand1_value % 3 + 1
+        total_score += 3 * result + hand2_value
+
+    return total_score
 
 
-print('Day #2, Part One:', puzzle3('day2.txt'))
-print('Day #2, Part Two:', puzzle4('day2.txt'))
+if __name__ == '__main__':
+    print('Day #2, part one:', puzzle3('./input/day2.txt'))
+    print('Day #2, part two:', puzzle4('./input/day2.txt'))
