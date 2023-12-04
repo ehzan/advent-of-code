@@ -1,25 +1,32 @@
-import fileHandle, re
+import re
+
+import file_handle
 
 
-def puzzle7(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    pairs = [re.split(r',|-', pair) for pair in data]
-    cnt = 0
-    for sections in pairs:
-        cnt += int(sections[0]) <= int(sections[2]) and int(sections[3]) <= int(sections[1]) or \
-               int(sections[2]) <= int(sections[0]) and int(sections[1]) <= int(sections[3])
-    return cnt
+def puzzle7(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    pairs = [re.split(r'[,-]', row) for row in data.splitlines()]
+
+    count_ = 0
+    for [a1, a2, b1, b2] in pairs:  # a1-a2,b1-b2
+        count_ += int(a1) <= int(b1) <= int(b2) <= int(a2) or \
+                  int(b1) <= int(a1) <= int(a2) <= int(b2)
+
+    return count_
 
 
-def puzzle8(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    pairs = [re.split(r',|-', pair) for pair in data]
-    cnt = 0
-    for sections in pairs:
-        cnt += int(sections[0]) <= int(sections[2]) <= int(sections[1]) or \
-               int(sections[2]) <= int(sections[0]) <= int(sections[3])
-    return cnt
+def puzzle8(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    pairs = [re.split(r'[,-]', row) for row in data.splitlines()]
+
+    count_ = 0
+    for [a1, a2, b1, b2] in pairs:  # a1-a2,b1-b2
+        count_ += int(a1) <= int(b1) <= int(a2) or \
+                  int(b1) <= int(a1) <= int(b2)
+
+    return count_
 
 
-print('Day #4, Part One:', puzzle7('day4.txt'))
-print('Day #4, Part Two:', puzzle8('day4.txt'))
+if __name__ == '__main__':
+    print('Day #4, part one:', puzzle7('./input/day4.txt'))
+    print('Day #4, part two:', puzzle8('./input/day4.txt'))
