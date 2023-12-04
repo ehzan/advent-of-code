@@ -1,22 +1,27 @@
-import fileHandle
+import file_handle
 
 
-def puzzle11(input_file):
-    data = fileHandle.readfile(input_file)
-    for i in range(4, len(data) + 1):
-        if len(set(data[i - 4:i])) == 4:
+def find_unique_substring(datastream: str, length: int) -> int | None:
+    for i in range(len(datastream) - length + 1):
+        substring = datastream[i:i + length]
+        if len(set(substring)) == length:
             return i
     return None
 
 
-def puzzle12(input_file):
-    data = fileHandle.readfile(input_file)
-    s = puzzle11(input_file)
-    for i in range(s + 14, len(data) + 1):
-        if len(set(data[i - 14:i])) == 14:
-            return i
-    return None
+def puzzle11(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    packet_offset = find_unique_substring(data, 4) + 4
+    return packet_offset
 
 
-print('Day #6, Part One:', puzzle11('day6.txt'))
-print('Day #6, Part Two:', puzzle12('day6.txt'))
+def puzzle12(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    packet_offset = find_unique_substring(data, 4) + 4
+    message_offset = find_unique_substring(data[packet_offset:], 14) + 14
+    return packet_offset + message_offset
+
+
+if __name__ == '__main__':
+    print('Day #6, part one:', puzzle11('./input/day6.txt'))
+    print('Day #6, part two:', puzzle12('./input/day6.txt'))
