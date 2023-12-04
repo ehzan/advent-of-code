@@ -1,42 +1,35 @@
-import fileHandle, itertools
+import file_handle
 
 
-def puzzle5(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    items = []
-    for rucksack in data:
-        n = int(len(rucksack) / 2)
-        part1 = rucksack[:n]
-        part2 = rucksack[n:]
-        for x in part1:
-            for y in part2:
-                if x == y:
-                    items.append(x)
-                    break
-            else:
-                continue
-            break
+def puzzle5(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    rucksacks = data.splitlines()
 
-    _sum = 0
-    for l in items:
-        _sum += ord(l.lower()) - ord('a') + (27 if l.isupper() else 1)
-    return _sum
+    intersections = []
+    for rucksack in rucksacks:
+        middle = len(rucksack) // 2
+        part1, part2 = rucksack[:middle], rucksack[middle:]
+        common_items = set(part1) & set(part2)
+        intersections.append(common_items.pop())
+
+    priority = lambda ch: ord(ch.lower()) - ord('a') + 1 + 26 * ch.isupper()
+    return sum(map(priority, intersections))
 
 
-def puzzle6(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    items = []
-    for i in range(0, len(data), 3):
-        for x, y, z in itertools.product(data[i], data[i + 1], data[i + 2]):
-            if x == y and y == z:
-                items.append(x)
-                break
+def puzzle6(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    rucksacks = data.splitlines()
 
-    _sum = 0
-    for l in items:
-        _sum += ord(l.lower()) - ord('a') + (27 if l.isupper() else 1)
-    return _sum
+    intersections = []
+    for i in range(0, len(rucksacks), 3):
+        rucksack1, rucksack2, rucksack3 = rucksacks[i:i + 3]
+        common_items = set(rucksack1) & set(rucksack2) & set(rucksack3)
+        intersections.append(common_items.pop())
+
+    priority = lambda ch: ord(ch.lower()) - ord('a') + 1 + 26 * ch.isupper()
+    return sum(map(priority, intersections))
 
 
-print('Day #3, Part One:', puzzle5('day3.txt'))
-print('Day #3, Part Two:', puzzle6('day3.txt'))
+if __name__ == '__main__':
+    print('Day #3, part one:', puzzle5('./input/day3.txt'))
+    print('Day #3, part two:', puzzle6('./input/day3.txt'))
