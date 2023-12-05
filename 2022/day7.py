@@ -1,7 +1,7 @@
-import fileHandle
+import file_handle
 
 
-def get_filesystem(terminal_output):
+def get_filesystem(terminal_output: list[str]) -> dict:
     path = ['root']
     dirs = {'root': 0, }
     terminal_output.append('$ cd /')
@@ -29,27 +29,19 @@ def get_filesystem(terminal_output):
     return dirs
 
 
-def puzzle13(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    dirs = get_filesystem(data)
-    _sum = 0
-    for path in dirs:
-        _sum += dirs[path] * (dirs[path] < 100000)
-    return _sum
+def puzzle13(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    dirs = get_filesystem(data.splitlines())
+    return sum(size for size in dirs.values() if size < 100000)
 
 
-def puzzle14(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    dirs = get_filesystem(data)
-    needed_space = dirs['root'] - 40000000
-    min_size = dirs['root']
-    best_choice = 'root'
-    for path in dirs:
-        if needed_space < dirs[path] < min_size:
-            min_size = dirs[path]
-            best_choice = path
-    return min_size
+def puzzle14(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    dirs = get_filesystem(data.splitlines())
+    required_free_up = dirs['root'] - 40000000
+    return min(size for size in dirs.values() if size > required_free_up)
 
 
-print('Day #7, Part One:', puzzle13('day7.txt'))
-print('Day #7, Part Two:', puzzle14('day7.txt'))
+if __name__ == '__main__':
+    print('Day #7, part one:', puzzle13('./input/day7.txt'))
+    print('Day #7, part two:', puzzle14('./input/day7.txt'))
