@@ -1,44 +1,55 @@
-import fileHandle
+import itertools
+
+import file_handle
 
 
-def puzzle15(input_file):
-    data = fileHandle.readfile(input_file)
-    h = [[int(ch) for ch in line] for line in data.splitlines()]
-    visible = 2 * (len(h) + len(h[0])) - 4
-    for y in range(1, len(h) - 1):
-        for x in range(1, len(h[y]) - 1):
-            row = h[y]
-            col = [h[i][x] for i in range(len(h))]
-            visible += h[y][x] > min(max(row[:x]), max(row[x + 1:]), max(col[:y]), max(col[y + 1:]))
-    return visible
+def is_visible(point: tuple[int, int], h: list[list[int]], ) -> bool:
+    (x, y) = point
+    if x in {0, len(h[0]) - 1} or y in {0, len(h) - 1}:
+        return True
+    row = h[y]
+    col = [h[yi][x] for yi in range(len(h))]
+    min_max = min(max(row[:x]), max(row[x + 1:]), max(col[:y]), max(col[y + 1:]))
+    return h[y][x] > min_max
 
 
-def calculate_scores(h):
-    scores = [[0] * len(h[0]) for y in range(len(h), )]
-    for y in range(1, len(h) - 1):
-        for x in range(1, len(h[y]) - 1):
-            row = h[y]
-            col = [h[i][x] for i in range(len(h))]
-            xl, xr, yu, yd = x - 1, x + 1, y - 1, y + 1
-            while xl > 0 and row[xl] < h[y][x]:
-                xl -= 1
-            while xr < len(row) - 1 and row[xr] < h[y][x]:
-                xr += 1
-            while yu > 0 and col[yu] < h[y][x]:
-                yu -= 1
-            while yd < len(col) - 1 and col[yd] < h[y][x]:
-                yd += 1
-            scores[y][x] = (x - xl) * (xr - x) * (y - yu) * (yd - y)
+def calculate_scores(h: list[list[int]], ) -> list[list[int]]:
+    n_rows, n_cols = len(h), len(h[0])
+    scores = [[1] * n_cols for _ in range(n_rows)]
+    for (x, y) in itertools.product(range(n_cols), range(n_rows)):
+        row = h[y]
+        col = [h[yi][x] for yi in range(n_rows)]
+        views = {'left': row[x - 1::-1],
+                 'right': row[x + 1:],
+                 'up': col[y - 1::-1],
+                 'down': col[y + 1:], }
+        for key, view in views.items():
+            i = -1
+            for i, hi in enumerate(view):
+                if hi >= h[y][x]:
+                    break
+            scores[y][x] *= (i + 1)
+
     return scores
 
 
-def puzzle16(input_file):
-    data = fileHandle.readfile(input_file)
-    h = [[int(ch) for ch in line] for line in data.splitlines()]
+def puzzle15(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    h = [list(map(int, row)) for row in data.splitlines()]
+
+    visible_trees = [(x, y) for y in range(len(h)) for x in range(len(h[y]))
+                     if is_visible((x, y), h)]
+    return len(visible_trees)
+
+
+def puzzle16(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    h = [list(map(int, row)) for row in data.splitlines()]
+
     scores = calculate_scores(h)
-    max_score_of_rows = map(max, scores)
-    return max(max_score_of_rows)
+    return max(map(max, scores))
 
 
-print('Day #8, Part One:', puzzle15('day8.txt'))
-print('Day #8, Part Two:', puzzle16('day8.txt'))
+if __name__ == '__main__':
+    print('Day #8, part one:', puzzle15('./input/day8.txt'))
+    print('Day #8, part two:', puzzle16('./input/day8.txt'))
