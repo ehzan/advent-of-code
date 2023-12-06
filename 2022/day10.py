@@ -1,49 +1,56 @@
-import fileHandle
+import file_handle
 
 
-def puzzle19(input_file):
-    data = fileHandle.readfile(input_file)
-    instructions = [line for line in data.splitlines()]
-    cycle = 1
-    x = 1
-    _sum = 0
-    for instruction in instructions:
-        cycle += 1
-        if cycle in [20, 60, 100, 140, 180, 220]:
-            _sum += cycle * x
-        if instruction[:4] == 'addx':
-            cycle += 1
-            x = x + int(instruction.split(' ')[1])
-            if cycle in [20, 60, 100, 140, 180, 220]:
-                _sum += cycle * x
-    return _sum
+def update_screen(screen: list[chr], pixel_index: int, x: int):
+    screen[pixel_index - 1] = '#' if x - 1 <= (pixel_index - 1) % 40 <= x + 1 else '.'
 
 
-def draw(pixel, screen, x):
-    screen[pixel] = '#' if pixel % 40 in [x - 1, x, x + 1] else '.'
-
-
-def puzzle20(input_file):
-    data = fileHandle.readfile(input_file)
-    instructions = [line for line in data.splitlines()]
-    screen = ['*'] * 240
-    cycle = 1
-    x = 1
-    draw(cycle - 1, screen, x)
-    for instruction in instructions:
-        draw(cycle - 1, screen, x)
-        cycle += 1
-        if instruction[:4] == 'addx':
-            draw(cycle - 1, screen, x)
-            cycle += 1
-            x = x + int(instruction.split(' ')[1])
-
-    for i in range(len(screen)):
-        print(screen[i] + screen[i], end='')
-        if i + 1 in [40, 80, 120, 160, 200, 240]:
+def plot(screen: list[chr]):
+    for i, pixel in enumerate(screen):
+        print(pixel * 2, end='')
+        if (i + 1) % 40 == 0:
             print()
+
+
+def puzzle19(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    instructions = data.splitlines()
+    important_cycles = range(20, 221, 40)
+
+    cycle, x = 0, 1
+    signal_strengths = []
+    for instruction in instructions:
+        cycle += 1
+        if cycle in important_cycles:
+            signal_strengths.append(cycle * x)
+        if instruction.startswith('addx'):
+            cycle += 1
+            if cycle in important_cycles:
+                signal_strengths.append(cycle * x)
+            x = x + int(instruction.split(' ')[1])
+
+    return sum(signal_strengths)
+
+
+def puzzle20(input_file: str) -> str:
+    data = file_handle.readfile(input_file).strip()
+    instructions = data.splitlines()
+
+    cycle, x = 0, 1
+    screen = ['*'] * 240
+    for instruction in instructions:
+        cycle += 1
+        update_screen(screen, cycle, x)
+        if instruction.startswith('addx'):
+            cycle += 1
+            update_screen(screen, cycle, x)
+            x = x + int(instruction.split(' ')[1])
+
+    if __name__ == '__main__':
+        plot(screen)
     return 'RZHFGJCB'
 
 
-print('Day #10, Part One:', puzzle19('day10.txt'))
-print('Day #10, Part Two:', puzzle20('day10.txt'))
+if __name__ == '__main__':
+    print('Day #10, part one:', puzzle19('./input/day10.txt'))
+    print('Day #10, part two:', puzzle20('./input/day10.txt'))
