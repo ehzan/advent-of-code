@@ -82,6 +82,63 @@ def heap_sort(data: list):
         sift_down(data, 0, last)
 
 
+def merge_sort_simple(data: list):
+    if len(data) <= 1:
+        return
+
+    middle = len(data) // 2
+    merge_sort_simple(L := data[:middle])
+    merge_sort_simple(R := data[middle:])
+
+    data.clear()
+    i, j = 0, 0
+    while i < len(L) and j < len(R):
+        if L[i] < R[j]:
+            data.append(L[i])
+            i += 1
+        else:
+            data.append(R[j])
+            j += 1
+    data += L[i:] + R[j:]
+
+
+def merge_sort_topdown(data: list):
+    def split_merge(A: list, start: int, end: int, data: list):
+        if end - start <= 1:
+            return
+        middle = (start + end) // 2
+        split_merge(data, start, middle, A)
+        split_merge(data, middle, end, A)
+        i, j = start, middle
+        for k in range(start, end):
+            if i < middle and (j == end or A[i] < A[j]):
+                data[k] = A[i]
+                i += 1
+            else:
+                data[k] = A[j]
+                j += 1
+
+    split_merge(data.copy(), 0, len(data), data)
+
+
+def merge_sort_bottomup(data: list):
+    size, n = 1, len(data)
+    A = data.copy()
+    while size < n:
+        for start in range(0, n, 2 * size):
+            middle, end = min(start + size, n), min(start + 2 * size, n)
+            i, j = start, middle
+            for k in range(start, end):
+                if i < middle and (j == end or A[i] < A[j]):
+                    data[k] = A[i]
+                    i += 1
+                else:
+                    data[k] = A[j]
+                    j += 1
+        A = data.copy()
+        size *= 2
+
+
 def test():
     with open('./input/sort-data.txt', 'r', encoding='UTF-8') as f:
         sort_data = f.read().strip()
@@ -93,11 +150,12 @@ def test():
 
     print('sorting algorithm \truntime(random / sorted data)')
     for func in [list.sort, exchange_sort, bubble_sort, insertion_sort, selection_sort,
-                 shell_sort, quick_sort, heap_sort, ]:
+                 shell_sort, quick_sort, heap_sort,
+                 merge_sort_simple, merge_sort_topdown, merge_sort_bottomup, ]:
         data = the_data.copy()
 
         t = timeit.timeit(stmt='func(data)', globals=locals(), number=1)
-        print(f" •{func.__name__}     \t\t {round(t, 3)}", end='\t ')
+        print(f" •{func.__name__} \r\t\t\t\t{round(t, 3)}", end='\t ')
 
         for i in range(0, len(test_data), 10000):
             assert data[i] == test_data[i]
@@ -106,6 +164,7 @@ def test():
         print(round(t, 3))
 
     print('(data size:', len(the_data), 'records)\n')
+    print('see more: https://en.wikipedia.org/wiki/Sorting_algorithm#Comparison_sorts')
 
 
 if __name__ == '__main__':
