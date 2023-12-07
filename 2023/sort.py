@@ -45,6 +45,23 @@ def shell_sort(data: list):
             data[j + gap] = ai
 
 
+def quick_sort(data: list, start: int = 0, end: int = None):
+    end = len(data) if end is None else end
+    if end - start <= 1:
+        return
+
+    pivot = data[end - 1]
+    i = start
+    for j in range(start, end - 1):
+        if data[j] < pivot:
+            data[i], data[j] = data[j], data[i]
+            i += 1
+
+    data[i], data[end - 1] = data[end - 1], data[i]
+    quick_sort(data, start, i)
+    quick_sort(data, i + 1, end)
+
+
 def test():
     with open('./input/sort-data.txt', 'r', encoding='UTF-8') as f:
         sort_data = f.read().strip()
@@ -56,7 +73,7 @@ def test():
 
     print('sorting algorithm \truntime(random / sorted data)')
     for func in [list.sort, exchange_sort, bubble_sort, insertion_sort, selection_sort,
-                 shell_sort, ]:
+                 shell_sort, quick_sort, ]:
         data = the_data.copy()
 
         t = timeit.timeit(stmt='func(data)', globals=locals(), number=1)
