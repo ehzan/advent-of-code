@@ -62,6 +62,26 @@ def quick_sort(data: list, start: int = 0, end: int = None):
     quick_sort(data, i + 1, end)
 
 
+def heap_sort(data: list):
+    def sift_down(heap: list, root: int, last: int):
+        while (child := 2 * root + 1) <= last:
+            if child + 1 <= last and heap[child] < heap[child + 1]:
+                child = child + 1
+            if heap[child] <= heap[root]:
+                break
+            heap[root], heap[child] = heap[child], heap[root]
+            root = child
+
+    last = len(data) - 1
+    for start in range(last // 2, -1, -1):  # heapify
+        sift_down(data, start, last)
+
+    while 0 < last:
+        data[0], data[last] = data[last], data[0]
+        last = last - 1
+        sift_down(data, 0, last)
+
+
 def test():
     with open('./input/sort-data.txt', 'r', encoding='UTF-8') as f:
         sort_data = f.read().strip()
@@ -73,11 +93,11 @@ def test():
 
     print('sorting algorithm \truntime(random / sorted data)')
     for func in [list.sort, exchange_sort, bubble_sort, insertion_sort, selection_sort,
-                 shell_sort, quick_sort, ]:
+                 shell_sort, quick_sort, heap_sort, ]:
         data = the_data.copy()
 
         t = timeit.timeit(stmt='func(data)', globals=locals(), number=1)
-        print(f" •{func.__name__}    \t\t {round(t, 3)}", end='\t ')
+        print(f" •{func.__name__}     \t\t {round(t, 3)}", end='\t ')
 
         for i in range(0, len(test_data), 10000):
             assert data[i] == test_data[i]
