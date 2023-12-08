@@ -1,91 +1,70 @@
-import fileHandle
+from collections import deque
+
+import file_handle
 
 
-def adjacent(position, h):
-    neighbors = set()
-    y, x = position[0], position[1]
-    if y > 0: neighbors.add((y - 1, x))
-    if y < len(h) - 1: neighbors.add((y + 1, x))
-    if x > 0: neighbors.add((y, x - 1))
-    if x < len(h[y]) - 1: neighbors.add((y, x + 1))
-    return neighbors
+def neighbors(point: tuple[int, int], heightmap: list[list[str]], ) -> set[tuple]:
+    (x, y) = point
+    adjacent_cells = {(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)}
+    return {(x, y) for x, y in adjacent_cells
+            if 0 <= y < len(heightmap) and 0 <= x < len(heightmap[y])}
 
 
-def find_S_E(h):
-    S, E = None, None
-    for i in range(len(h)):
-        if 'S' in h[i]:
-            S = (i, h[i].index('S'))
-            h[S[0]][S[1]] = 'a'
-        if 'E' in h[i]:
-            E = (i, h[i].index('E'))
-            h[E[0]][E[1]] = 'z'
-    return S, E
+def locate(label: str, heightmap: list[list[str]], ) -> tuple[int, int]:
+    for y, row in enumerate(heightmap):
+        if label in row:
+            x = row.index(label)
+            return x, y
 
 
-def shortest_path(S, E, h):
-    MAX_PATH_LENGTH = len(h) * len(h[0])
-    path_length = [[MAX_PATH_LENGTH] * len(h[i]) for i in range(len(h))]
-    path_length[S[0]][S[1]] = 0
-    check_list = {S}
-    while check_list:
-        point = check_list.pop()
-        for a in adjacent(point, h):
-            if ord(h[a[0]][a[1]]) <= ord(h[point[0]][point[1]]) + 1 and \
-                    path_length[a[0]][a[1]] > path_length[point[0]][point[1]] + 1:
-                path_length[a[0]][a[1]] = path_length[point[0]][point[1]] + 1
-                if a != E:
-                    check_list.add(a)
-    return path_length[E[0]][E[1]]
+def shortest_paths(start: tuple[int, int], heightmap: list[list[str]],
+                   descending: bool = False) -> list[list[int]]:
+    k = 1 - 2 * descending  # i.e., k = -1 if descending else 1
+    path_lengths = [[-1] * len(heightmap[0]) for _ in range(len(heightmap))]
+    path_lengths[start[1]][start[0]] = 0
+
+    bfs_queue = deque([start])
+    while bfs_queue:
+        (px, py) = bfs_queue.popleft()
+        for (nx, ny) in neighbors((px, py), heightmap):
+            if path_lengths[ny][nx] == -1 and \
+                    k * (ord(heightmap[ny][nx]) - ord(heightmap[py][px])) <= 1:
+                path_lengths[ny][nx] = path_lengths[py][px] + 1
+                bfs_queue.append((nx, ny))
+
+    return path_lengths
 
 
-def puzzle23(input_file):
-    data = fileHandle.readfile(input_file)
-    h = [[ch for ch in line] for line in data.splitlines()]
-    S, E = find_S_E(h)
-    return shortest_path(S, E, h)
+def puzzle23(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    heightmap = [list(row) for row in data.splitlines()]
+
+    (Sx, Sy) = locate('S', heightmap)
+    (Ex, Ey) = locate('E', heightmap)
+    heightmap[Sy][Sx] = 'a'
+    heightmap[Ey][Ex] = 'z'
+    path_lengths = shortest_paths((Sx, Sy), heightmap)
+
+    return path_lengths[Ey][Ex]
 
 
-def puzzle24b(input_file):
-    data = fileHandle.readfile(input_file)
-    h = [[ch for ch in line] for line in data.splitlines()]
-    S, E = find_S_E(h)
-    shortest_paths = set()
-    for i in range(len(h)):
-        for j in range(len(h[i])):
-            if h[i][j] == 'a':
-                S = (i, j)
-                shortest_paths.add(shortest_path(S, E, h))
-    return min(shortest_paths)
+def puzzle24(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    heightmap = [list(row) for row in data.splitlines()]
+
+    (Sx, Sy) = locate('S', heightmap)
+    (Ex, Ey) = locate('E', heightmap)
+    heightmap[Sy][Sx] = 'a'
+    heightmap[Ey][Ex] = 'z'
+    path_lengths = shortest_paths((Ex, Ey), heightmap, descending=True)
+
+    acceptable_lengths = [path_lengths[y][x] for y, row in enumerate(heightmap)
+                          for x, height in enumerate(row)
+                          if height == 'a' and path_lengths[y][x] != -1]
+
+    return min(acceptable_lengths)
 
 
-def reverse_shortest_path(E, h):
-    MAX_PATH_LENGTH = len(h) * len(h[0])
-    path_length = [[MAX_PATH_LENGTH] * len(h[i]) for i in range(len(h))]
-    path_length[E[0]][E[1]] = 0
-    check_list = {E}
-    while check_list:
-        point = check_list.pop()
-        for a in adjacent(point, h):
-            if ord(h[a[0]][a[1]]) >= ord(h[point[0]][point[1]]) - 1 and \
-                    path_length[a[0]][a[1]] > path_length[point[0]][point[1]] + 1:
-                path_length[a[0]][a[1]] = path_length[point[0]][point[1]] + 1
-                check_list.add(a)
-    return path_length
-
-
-def puzzle24(input_file):
-    data = fileHandle.readfile(input_file)
-    h = [[ch for ch in line] for line in data.splitlines()]
-    S, E = find_S_E(h)
-    path_length = reverse_shortest_path(E, h)
-    _shortest_path = len(h) * len(h[0])
-    for i in range(len(h)):
-        for j in range(len(h[i])):
-            if h[i][j] == 'a' and path_length[i][j] < _shortest_path:
-                _shortest_path = path_length[i][j]
-    return _shortest_path
-
-
-print('Day #12, Part One:', puzzle23('day12.txt'))
-print('Day #12, Part Two:', puzzle24('day12.txt'))
+if __name__ == '__main__':
+    print('Day #12, part one:', puzzle23('./input/day12.txt'))
+    print('Day #12, part two:', puzzle24('./input/day12.txt'))
