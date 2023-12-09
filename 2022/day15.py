@@ -1,70 +1,71 @@
-import fileHandle, itertools, re
+import itertools
+import re
+
+import file_handle
 
 
-def get_sensors(data):
-    sensors = []
-    for line in data:
-        Sx, Sy, Bx, By = map(int, re.findall(r'-?\d+', line))
-        d = abs(Sx - Bx) + abs(Sy - By)
-        sensors.append((Sx, Sy, d))
+def parse_input(data: str) -> list[tuple]:
+    sensor_beacons = [map(int, re.findall(r'-?\d+', row))
+                      for row in data.splitlines()]
+    sensors = [(Sx, Sy, abs(Sx - Bx) + abs(Sy - By))
+               for Sx, Sy, Bx, By in sensor_beacons]
     return sensors
 
 
-def join(segments):
+def join_segments(segments: list[tuple]) -> list[tuple]:
     segments.sort()
-    sg = segments[0]
-    joined_segments = [sg]
-    i = 1
-    while i < len(segments):
-        if segments[i][0] <= sg[1]:
-            sg[1] = max(sg[1], segments[i][1])
+    joined_segments = segments[:1]
+
+    for (b1, b2) in segments[1:]:
+        (a1, a2) = joined_segments[-1]
+        if b1 <= a2:
+            joined_segments[-1] = (a1, max(a2, b2))
         else:
-            joined_segments.append(sg)
-            sg = segments[i]
-            joined_segments.append(sg)
-        i += 1
+            joined_segments.append((b1, b2))
+
     return joined_segments
 
 
-def puzzle29(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    sensors = get_sensors(data)
-    y = 2000000
+def puzzle29(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    sensors = parse_input(data)
+
+    row_y = 2000000
     segments = []
-    for s in sensors:
-        d = s[2] - abs(y - s[1])
-        if d >= 0:
-            segments.append([s[0] - d, s[0] + d])
-    joined_segments = join(segments)
-    print(*joined_segments)
-    segment_lengths = map(lambda sg: sg[1] - sg[0], joined_segments)
+    for (x, y, d) in sensors:
+        if abs(row_y - y) <= d:
+            dx = d - abs(row_y - y)
+            segments.append((x - dx, x + dx))
+
+    joined_segments = join_segments(segments)
+    segment_lengths = [x2 - x1 for (x1, x2) in joined_segments]
+
     return sum(segment_lengths)
 
 
-def puzzle30(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    sensors = get_sensors(data)
+def puzzle30(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    sensors = parse_input(data)
+
     b, c = 0, 0
-    for s1, s2 in itertools.product(sensors, sensors):
-        x1, y1, d1 = s1
-        x2, y2, d2, = s2
+    for (x1, y1, d1), (x2, y2, d2) in itertools.product(sensors, repeat=2):
         # y=x+b
         b1 = y1 - x1 - d1
         b2 = y2 - x2 + d2
         if b1 == b2 + 2:
             b = b2 + 1
-            print('y=x+', b, end=', ')
         # y=-x+c
         c1 = y1 + x1 - d1
         c2 = y2 + x2 + d2
         if c1 == c2 + 2:
             c = c2 + 1
-            print('y=-x+', c, end=', ')
+
     y = (b + c) // 2
     x = (c - b) // 2
-    print('(x,y) =', (x, y))
+
     return x * 4000000 + y
 
 
-print('Day #15, Part One:', puzzle29('day15.txt'))
-print('Day #15, Part Two:', puzzle30('day15.txt'))
+if __name__ == '__main__':
+    print('Day #15, part one:', puzzle29('./input/day15.txt'))
+    print('Day #15, part two:', puzzle30('./input/day15.txt'))
