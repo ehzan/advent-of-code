@@ -1,42 +1,43 @@
-import fileHandle, re, functools
+import functools
+import re
+
+import file_handle
 
 
-def compare(l1, l2):
-    # print(l1, l2, l1.__class__, l2.__class__)
-    if isinstance(l1, int) and isinstance(l2, int):
-        return 1 if l1 < l2 else -1 if l1 > l2 else 0
-    if isinstance(l1, int):  # and l2 is list
-        l1 = [l1]
-    if isinstance(l2, int):  # and l1 is list
-        l2 = [l2]
-    for i in range(min(len(l1), len(l2), )):
-        cmp = compare(l1[i], l2[i])
-        if cmp:  # i.e. cmp==1 or -1
-            return cmp
+def compare(val1: int | list, val2: int | list) -> int:
+    if isinstance(val1, int) and isinstance(val2, int):
+        return 1 if val1 < val2 else -1 if val1 > val2 else 0
+
+    l1 = [val1] if isinstance(val1, int) else val1
+    l2 = [val2] if isinstance(val2, int) else val2
+
+    for item1, item2 in zip(l1, l2):
+        if compare(item1, item2):  # i.e. cmp is 1 or -1
+            return compare(item1, item2)
+
     return 1 if len(l1) < len(l2) else -1 if len(l1) > len(l2) else 0
 
 
-def puzzle25(input_file):
-    data = fileHandle.readfile(input_file).split('\n\n')
-    right_orders = []
-    for i in range(len(data)):
-        packet1, packet2 = map(eval, data[i].splitlines())
-        if compare(packet1, packet2) == 1:
-            right_orders.append(i + 1)
-    # print(right_order)
-    return sum(right_orders)
+def puzzle25(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    pairs = [map(eval, pair.splitlines()) for pair in data.split('\n\n')]
+
+    right_ordered_pairs = [i + 1 for i, pair in enumerate(pairs) if compare(*pair) == 1]
+
+    return sum(right_ordered_pairs)
 
 
-def puzzle26(input_file):
-    data = fileHandle.readfile(input_file)
-    data = re.split(r'\n+', data)
-    packets = list(map(eval, data))  # i.e. packets=[eval(d) for d in data]
-    packets.append([[2]])
-    packets.append([[6]])
+def puzzle26(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    packets = re.split(r'\n+', data)
+    packets = list(map(eval, packets))
+
+    packets.extend([[[2]], [[6]], ])
     packets.sort(key=functools.cmp_to_key(compare), reverse=True)
-    # print(*packets, sep='\n')
+
     return (packets.index([[2]]) + 1) * (packets.index([[6]]) + 1)
 
 
-print('Day #13, Part One:', puzzle25('day13.txt'))
-print('Day #13, Part Two:', puzzle26('day13.txt'))
+if __name__ == '__main__':
+    print('Day #13, part one:', puzzle25('./input/day13.txt'))
+    print('Day #13, part two:', puzzle26('./input/day13.txt'))
