@@ -1,76 +1,134 @@
+import functools
+import math
+import re
 import time
 
-import fileHandle, re
+import file_handle
 
 
-def parse_input(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    data = [re.findall(r'\d+', line) for line in data]
-    blueprints = [{'ore': int(d[1]), 'clay': int(d[2]), 'obsidian': (int(d[3]), int(d[4]), 0),
-                   'geode': (int(d[5]), 0, int(d[6]),)} for d in data]
-    return blueprints
+class Tuple_(tuple):
+
+    def __add__(self, other):
+        return Tuple_(a + b for a, b in zip(self, other))
+
+    def __sub__(self, other):
+        return Tuple_(a - b for a, b in zip(self, other))
+
+    def __mul__(self, other: int):
+        return Tuple_(a * other for a in self)
+
+    def __matmul__(self, other) -> bool:
+        # not efficient: return all(a >= b for a, b in zip(self, other))
+        for a, b in zip(self, other):
+            if a < b:
+                return False
+        return True
 
 
-def plus(tuple1, tuple2):
-    return (tuple1[0] + tuple2[0],
-            tuple1[1] + tuple2[1],
-            tuple1[2] + tuple2[2],
-            tuple1[3] + tuple2[3])
+global blueprint
 
 
-# ad = Infix(plus)
+def parse_input(data: str) -> list[dict]:
+    regex = r'Blueprint (\d+):.* (\d+).* (\d+).* (\d+) ore and (\d+) clay.* (\d+) ore and (\d+) obsidian'
+    return [{'id': int(match[0]),
+             'ore': (int(match[1]), 0, 0),
+             'clay': (int(match[2]), 0, 0),
+             'obsidian': (int(match[3]), int(match[4]), 0),
+             'geode': (int(match[5]), 0, int(match[6])),
+             'max': (max(int(match[1]), int(match[2]), int(match[3]), int(match[5]), ),
+                     int(match[4]),
+                     int(match[6])),
+             } for match in re.findall(regex, data)]
 
 
-def calc(states, blueprint):
-    next_level = set()
-    for state in states:
-        t, robots, minerals = state
-        ore_robots, clay_robots, obsidian_robots, geode_robots = robots
+@functools.cache
+def max_geodes_slow(t: int, minerals: Tuple_, robots: Tuple_, ) -> int:
+    if t == 1:
+        return 0
 
-        max_ore_consumption = max(blueprint['clay'], blueprint['obsidian'][0], blueprint['geode'][0])
-        max_ore_needed = max_ore_consumption + (t - 1) * (max_ore_consumption - ore_robots)
-        max_clay_needed = blueprint['obsidian'][1] + (t - 1) * (blueprint['obsidian'][1] - clay_robots)
-        max_obsidian_needed = blueprint['geode'][2] + (t - 1) * (blueprint['geode'][2] - obsidian_robots)
-        minerals = (min(minerals[0], max_ore_needed), min(minerals[1], max_clay_needed),
-                    min(minerals[2], max_obsidian_needed), minerals[3])
-        ore, clay, obsidian, geode = minerals
-        # print(t, ore_robots, clay_robots, obsidian_robots, geode_robots, ore, clay, obsidian, geode)
-        # if geode_robots > 0:
-        #     print(state)
-        next_level.add((t - 1, robots, plus(minerals, robots, )))
-        if ore >= blueprint['ore'] and ore < max_ore_needed:
-            next_level.add((t - 1, plus(robots, (1, 0, 0, 0), ),
-                            plus(plus(minerals, robots, ), (-blueprint['ore'], 0, 0, 0), )))
-        if ore >= blueprint['clay'] and clay < max_clay_needed:
-            next_level.add((t - 1, plus(robots, (0, 1, 0, 0), ),
-                            plus(plus(minerals, robots, ), (-blueprint['clay'], 0, 0, 0), )))
-        if ore >= blueprint['obsidian'][0] and clay >= blueprint['obsidian'][1] and obsidian < max_obsidian_needed:
-            next_level.add((t - 1, plus(robots, (0, 0, 1, 0), ),
-                            plus(plus(minerals, robots, ),
-                                 (-blueprint['obsidian'][0], -blueprint['obsidian'][1], 0, 0), )))
-        if ore >= blueprint['geode'][0] and obsidian >= blueprint['geode'][2]:
-            next_level.add((t - 1, plus(robots, (0, 0, 0, 1), ),
-                            plus(plus(minerals, robots, ),
-                                 (-blueprint['geode'][0], 0, -blueprint['geode'][2], 0), )))
-    return next_level
+    new_minerals, new_robots = check_sufficient(t, minerals, robots)
+    if new_minerals != minerals:
+        return max_geodes_slow(t, new_minerals, new_robots)
+
+    geodes = [max_geodes_slow(t - 1, minerals + robots, robots)]
+
+    for i, key in enumerate(['ore', 'clay', 'obsidian']):
+        if minerals[i] != math.inf and minerals @ blueprint[key]:
+            new_minerals = minerals + robots - blueprint[key]
+            new_robots = robots + (i == 0, i == 1, i == 2)
+            geodes.append(max_geodes_slow(t - 1, new_minerals, new_robots))
+
+    if minerals @ blueprint['geode']:
+        new_minerals = minerals + robots - blueprint['geode']
+        geodes.append(t - 1 + max_geodes_slow(t - 1, new_minerals, robots))
+
+    return max(geodes)
 
 
-def puzzle37(input_file):
-    blueprints = parse_input(input_file)
-    print(blueprints[1])
-    ans = 1
-    _time = time.time()
-    for n, bp in enumerate(blueprints[:3]):
-        bfs = [set()] * 25
-        bfs[0] = {(24, (1, 0, 0, 0), (0, 0, 0, 0)), }
-        for i in range(24):
-            bfs[i + 1] = calc(bfs[i], bp)
-            # print(32 - i - 1, len(bfs[i + 1]), )
-            # print(bfs[i + 1])
-        print(n + 1, max(bfs[i + 1], key=lambda a: a[2][3])[2][3])
-        print(time.time() - _time)
-        ans *= max(bfs[i + 1], key=lambda a: a[2][3])[2][3]
+@functools.cache
+def max_geodes(t: int, minerals: Tuple_, robots: Tuple_, ) -> int:
+    new_minerals, new_robots = check_sufficient(t, minerals, robots)
+    if new_minerals != minerals:
+        return max_geodes(t, new_minerals, new_robots)
+
+    geodes = [0]
+    for i, robot_type in enumerate(['ore', 'clay', 'obsidian', 'geode']):
+        if robot_type == 'geode' or minerals[i] < math.inf:
+            rt = required_time(robot_type, minerals, robots)
+            if rt < t:
+                new_minerals = minerals + robots * rt - blueprint[robot_type]
+                new_robots = robots + (i == 0, i == 1, i == 2)
+                geodes.append(max_geodes(t - rt, new_minerals, new_robots)
+                              + (t - rt if robot_type == 'geode' else 0))
+
+    return max(geodes)
+
+
+def check_sufficient(t: int, minerals: Tuple_, robots: Tuple_) -> tuple[Tuple_, Tuple_]:
+    minerals, robots = list(minerals), list(robots)
+
+    for i in range(len(minerals)):
+        if (t - 1) * blueprint['max'][i] <= minerals[i] + (t - 2) * robots[i]:
+            minerals[i], robots[i] = math.inf, 0
+
+    return Tuple_(minerals), Tuple_(robots)
+
+
+def required_time(robot_type: str, minerals: Tuple_, robots: Tuple_) -> int:
+    needed_times = [1 if cost <= curr else
+                    math.inf if not gain else
+                    1 + math.ceil((cost - curr) / gain)
+                    for cost, curr, gain in zip(blueprint[robot_type], minerals, robots)]
+    return max(needed_times)
+
+
+def puzzle37(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    blueprints = parse_input(data)
+
+    global blueprint
+    ans = 0
+    for blueprint in blueprints:
+        ans += blueprint['id'] * max_geodes(24, Tuple_((0, 0, 0)), Tuple_((1, 0, 0)), )
+        max_geodes.cache_clear()
+
     return ans
 
 
-print('Day #19, Part One:', puzzle37('input.txt'))
+def puzzle38(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    blueprints = parse_input(data)
+
+    global blueprint
+    ans = 1
+    for blueprint in blueprints[:3]:
+        ans *= max_geodes(32, Tuple_((0, 0, 0)), Tuple_((1, 0, 0)), )
+        max_geodes.cache_clear()
+
+    return ans
+
+
+if __name__ == '__main__':
+    print('Day #19, part one:', puzzle37('./input/day19.txt'))
+    timestamp = time.time()
+    print('Day #19, part one:', puzzle38('./input/day19.txt'), f' (runtime: {round(time.time() - timestamp, 1)}s) ')
