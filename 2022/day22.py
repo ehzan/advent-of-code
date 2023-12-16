@@ -1,157 +1,155 @@
-import fileHandle, re
+import enum
+import re
+
+import file_handle
 
 
-def parse_input(input_file):
-    data = fileHandle.readfile(input_file, strip=False).split('\n\n')
+def parse_input(data: str) -> tuple[list, list]:
+    data = data.split('\n\n')
     mapp = data[0].splitlines()
-    path = re.findall(r'^\d+|[A-Z]\d+', data[1])
+    path = [(int(segment[:-1]), segment[-1])
+            for segment in re.findall(r'\d+[RL\n]?', data[1])]
+
     return mapp, path
 
 
+class Dir(enum.Enum):
+    RIGHT, DOWN, LEFT, UP = 0, 1, 2, 3
+
+
 class Tour:
-    def __init__(self, _map, cur, dir):
-        self.map = _map
-        self.cur = cur
-        self.cur1 = cur
-        self.dir = dir
+    def __init__(self, mapp: list[str],
+                 starting_position: tuple[int, int],
+                 direction: Dir):
+        self._map = mapp
+        self._curr = starting_position
+        self._dir = direction
 
-    _vector = {'right': (1, 0), 'left': (-1, 0), 'up': (0, -1), 'down': (0, 1)}
-    _WIDTH = 50
-    _faces = [(1, 0), (2, 0), (1, 1), (0, 2), (1, 2), (0, 3)]
+    DIRECTION = {Dir.RIGHT: (1, 0), Dir.LEFT: (-1, 0),
+                 Dir.UP: (0, -1), Dir.DOWN: (0, 1), }
 
-    def _next(self, x=None, y=None):
-        Vx, Vy = self._vector[self.dir]
-        x = self.cur[0] if x is None else x
-        y = self.cur[1] if y is None else y
-        return x + Vx, y + Vy
+    FACE = {(1, 0): 'A', (2, 0): 'B',
+            (1, 1): 'C',
+            (0, 2): 'D', (1, 2): 'E',
+            (0, 3): 'F', }
 
-    def _face(self, pos):
-        a = pos[0] // self._WIDTH
-        b = pos[1] // self._WIDTH
-        if (a, b) in self._faces:
-            return 'ABCDEF'[self._faces.index((a, b))]  # A,B,C,...
-        else:
-            return None
+    @property
+    def password(self) -> int:
+        return 1000 * (self._curr[1] + 1) + 4 * (self._curr[0] + 1) + self._dir.value
 
-    def turn(self, turn_direction):
-        turn_right = {'right': 'down', 'left': 'up', 'up': 'right', 'down': 'left'}
-        turn_left = {'right': 'up', 'left': 'down', 'up': 'left', 'down': 'right'}
-        self.dir = turn_right[self.dir] if turn_direction == 'R' else turn_left[self.dir]
+    def turn(self, turn_to: str):
+        self._dir = Dir((self._dir.value + (turn_to == 'R') - (turn_to == 'L')) % 4)
 
-    def walk1(self, turn_direction, length):
-        self.turn(turn_direction)
+    def next1(self) -> tuple[int, int]:
+        (x, y) = self._curr
+        (dx, dy) = Tour.DIRECTION[self._dir]
+        (x, y) = (x + dx, y + dy)
+
+        if 0 <= y < len(self._map) and 0 <= x < len(self._map[y]) \
+                and self._map[y][x] != ' ':
+            return x, y
+
+        match self._dir:
+            case Dir.RIGHT:
+                x = self._map[y].rfind(' ') + 1
+            case Dir.LEFT:
+                x = len(self._map[y]) - 1
+            case Dir.DOWN:
+                y = next(yi for yi in range(len(self._map)) if self._map[yi][x] != ' ')
+            case Dir.UP:
+                y = next(yi for yi in range(len(self._map) - 1, -1, -1) if x < len(self._map[yi]))
+
+        return x, y
+
+    def walk1(self, length: int, turn_to: str):
         for _ in range(length):
-            x, y = self.cur
-            while True:
-                x, y = self._next(x, y)
-                y = y % len(self.map)
-                x = x % len(self.map[0])
-                if x < len(self.map[y]) and self.map[y][x] != ' ':
-                    break
-            assert self.map[y][x] in ['.', '#']
-            if self.map[y][x] == '.':
-                self.cur = (x, y)
-            else:
+            (x, y) = self.next1()
+            if self._map[y][x] == '#':
                 break
+            else:
+                self._curr = (x, y)
+        self.turn(turn_to)
+
+    def next2(self) -> tuple[tuple, Dir]:
+        new_dir = self._dir
+        (x, y) = self._curr
+        current_page = Tour.FACE[(x // 50, y // 50)]
+        (dx, dy) = Tour.DIRECTION[self._dir]
+        (x, y) = (x + dx, y + dy)
+
+        if (x // 50, y // 50) not in Tour.FACE:
+            (x, y), new_dir = self.turn_over(current_page, x, y)
+
+        return (x, y), new_dir
 
     @staticmethod
-    def turn_over(face, x, y):
-        if face == 'A' and y == -1:
-            y = x + 100
-            x = 0
-            new_dir = 'right'
-        elif face == 'F' and x == -1:
-            x = y - 100
-            y = 0
-            new_dir = 'down'
-        elif face == 'A' and x == 49:
-            y = 149 - y
-            x = 0
-            new_dir = 'right'
-        elif face == 'D' and x == -1:
-            y = 149 - y
-            x = 50
-            new_dir = 'right'
-        elif face == 'B' and y == -1:
-            x = x - 100
-            y = 199
-            new_dir = 'up'
-        elif face == 'F' and y == 200:
-            x = x + 100
-            y = 0
-            new_dir = 'down'
-        elif face == 'B' and x == 150:
-            y = 149 - y
-            x = 99
-            new_dir = 'left'
-        elif face == 'E' and x == 100:
-            y = 149 - y
-            x = 149
-            new_dir = 'left'
-        elif face == 'B' and y == 50:
-            y = x - 50
-            x = 99
-            new_dir = 'left'
-        elif face == 'C' and x == 100:
-            x = y + 50
-            y = 49
-            new_dir = 'up'
-        elif face == 'C' and x == 49:
-            x = y - 50
-            y = 100
-            new_dir = 'down'
-        elif face == 'D' and y == 99:
-            y = x + 50
-            x = 50
-            new_dir = 'right'
-        elif face == 'E' and y == 150:
-            y = 100 + x
-            x = 49
-            new_dir = 'left'
-        elif face == 'F' and x == 50:
-            x = y - 100
-            y = 149
-            new_dir = 'up'
-        return x, y, new_dir
+    def turn_over(face: str, x: int, y: int) -> tuple[tuple, Dir]:
+        match face, x, y:
+            case 'A', 49, _:
+                return (0, 149 - y), Dir.RIGHT
+            case 'A', _, -1:
+                return (0, x + 100), Dir.RIGHT
+            case 'B', 150, _:
+                return (99, 149 - y), Dir.LEFT
+            case 'B', _, -1:
+                return (x - 100, 199), Dir.UP
+            case 'B', _, 50:
+                return (99, x - 50), Dir.LEFT
+            case 'C', 49, _:
+                return (y - 50, 100), Dir.DOWN
+            case 'C', 100, _:
+                return (y + 50, 49), Dir.UP
+            case 'D', -1, _:
+                return (50, 149 - y), Dir.RIGHT
+            case 'D', _, 99:
+                return (50, x + 50), Dir.RIGHT
+            case 'E', 100, _:
+                return (149, 149 - y), Dir.LEFT
+            case 'E', _, 150:
+                return (49, 100 + x), Dir.LEFT
+            case 'F', -1, _:
+                return (y - 100, 0), Dir.DOWN
+            case 'F', 50, _:
+                return (y - 100, 149), Dir.UP
+            case 'F', _, 200:
+                return (x + 100, 0), Dir.DOWN
 
-    def walk2(self, turn_direction, length):
-        self.turn(turn_direction)
+    def walk2(self, length: int, turn_to: str):
         for _ in range(length):
-            x, y = self._next()
-            new_dir = self.dir
-            if self._face((x, y)) is None:
-                x, y, new_dir = self.turn_over(self._face(self.cur), x, y)
-            assert self.map[y][x] in ['.', '#']
-            if self.map[y][x] == '.':
-                self.cur = (x, y)
-                self.dir = new_dir
-            else:
+            (x, y), new_dir = self.next2()
+            assert self._map[y][x] in ['.', '#']
+            if self._map[y][x] == '#':
                 break
+            else:
+                self._curr = (x, y)
+                self._dir = new_dir
+        self.turn(turn_to)
 
 
-def puzzle43(input_file):
-    mapp, path = parse_input(input_file)
-    cur = (mapp[0].index('.'), 0)
-    tour = Tour(mapp, cur, 'up')
-    path[0] = 'R' + path[0]
-    for w in path:
-        tour.walk1(w[0], int(w[1:]), )
-    password = 1000 * (tour.cur[1] + 1) + 4 * (tour.cur[0] + 1)
-    password += 0 if tour.dir == 'right' else 1 if tour.dir == 'down' else 2 if tour.dir == 'left' else 3
-    return tour.cur, password
+def puzzle43(input_file: str) -> int:
+    data = file_handle.readfile(input_file)
+    mapp, path = parse_input(data)
+
+    starting_position = (mapp[0].index('.'), 0)
+    tour = Tour(mapp, starting_position, Dir.RIGHT)
+    for length, turn_to in path:
+        tour.walk1(length, turn_to)
+
+    return tour.password
 
 
-def puzzle44(input_file):
-    mapp, path = parse_input(input_file)
-    cur = (mapp[0].index('.'), 0)
-    tour = Tour(mapp, cur, 'up')
-    path[0] = 'R' + path[0]
-    for w in path:
-        tour.walk2(w[0], int(w[1:]), )
-    password = 1000 * (tour.cur[1] + 1) + 4 * (tour.cur[0] + 1)
-    password += 0 if tour.dir == 'right' else 1 if tour.dir == 'down' else 2 if tour.dir == 'left' else 3
-    return tour.cur, password
+def puzzle44(input_file: str) -> int:
+    data = file_handle.readfile(input_file)
+    mapp, path = parse_input(data)
+
+    starting_position = (mapp[0].index('.'), 0)
+    tour = Tour(mapp, starting_position, Dir.RIGHT)
+    for length, turn_to in path:
+        tour.walk2(length, turn_to)
+
+    return tour.password
 
 
-print('Day #22 Part One:', puzzle43('day22.txt'))
-print('Day #22 Part Two:', puzzle44('day22.txt'))
+if __name__ == '__main__':
+    print('Day #22, part one:', puzzle43('./input/day22.txt'))
+    print('Day #22, part two:', puzzle44('./input/day22.txt'))
