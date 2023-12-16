@@ -1,60 +1,61 @@
-import fileHandle
+import operator
+
+import file_handle
+
+OPERATORS = {'+': operator.add,
+             '-': operator.sub,
+             '*': operator.mul,
+             '/': operator.truediv, }
 
 
-def parse_input(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    monkeys = {line.split(': ')[0]: line.split(': ')[1] for line in data}
-    return monkeys
+def parse_input(data: str) -> dict[str, list]:
+    return {row.split(': ')[0]: row.split(': ')[1].split()
+            for row in data.splitlines()}
 
 
-def value(name, monkeys):
-    if monkeys[name].isnumeric():
-        return int(monkeys[name])
-    a, op, b = monkeys[name].split(' ')
-    return eval(f'{value(a, monkeys)} {op} {value(b, monkeys)}')
+def calc(var: str, equations: dict[str, list]) -> float:
+    match equations[var]:
+        case [number]:
+            return int(number) if number else None
+        case [var1, op, var2]:
+            a = calc(var1, equations)
+            b = calc(var2, equations)
+            return OPERATORS[op](a, b) if a and b else None
 
 
-def puzzle41(input_file):
-    monkeys = parse_input(input_file)
-    return value('root', monkeys)
+def puzzle41(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    equations = parse_input(data)
+
+    return int(calc('root', equations))
 
 
-def puzzle42(input_file):
-    monkeys = parse_input(input_file)
-    monkeys['root'] = monkeys['root'].replace(monkeys['root'][5], '-')
-    monkeys['humn'] = 'x'
+def puzzle42(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    equations = parse_input(data)
 
-    name, result = 'root', 0
-    while name != 'humn':
-        a, op, b = monkeys[name].split(' ')
-        try:
-            val = value(a, monkeys)
-        except ValueError:
-            val = value(b, monkeys)
-            match op:
-                case '+':
-                    result = result - val
-                case '-':
-                    result = result + val
-                case '*':
-                    result = result / val
-                case '/':
-                    result = result * val
-            name = a
-        else:
-            match op:
-                case '+':
-                    result = result - val
-                case '-':
-                    result = val - result
-                case '*':
-                    result = result / val
-                case '/':
-                    result = val / result
-            name = b
+    equations['root'][1] = '-'
+    equations['humn'] = [None]
 
-    return result
+    var, value = 'root', 0
+    while var != 'humn':
+        [var1, op, var2] = equations[var]
+        val1 = calc(var1, equations)
+        val2 = calc(var2, equations)
+        (var, v, k) = (var2, val1, -1) if val1 else (var1, val2, 1)
+        match op:
+            case '+':
+                value = value - v
+            case '-':
+                value = k * value + v
+            case '*':
+                value = value / v
+            case '/':
+                value = value ** k * v
+
+    return int(value)
 
 
-print('Day #21 Part One:', puzzle41('day21.txt'))
-print('Day #21 Part Two:', puzzle42('day21.txt'))
+if __name__ == '__main__':
+    print('Day #21, part one:', puzzle41('./input/day21.txt'))
+    print('Day #21, part two:', puzzle42('./input/day21.txt'))
