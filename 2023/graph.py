@@ -98,6 +98,48 @@ def dijkstra2(src: int, adjacency_list: list[set[tuple]]) -> tuple[list, list]:
     return dist, pre
 
 
+def floyd_warshall(adjacency_list: list[set[tuple]]) -> tuple[list[list], list[list]]:
+    n = len(adjacency_list)
+    dist = [[math.inf] * n for _ in range(n)]
+    pre: list[list[int | None]] = [[None] * n for _ in range(n)]
+
+    for u in range(n):
+        dist[u][u] = 0
+        for (v, weight) in adjacency_list[u]:
+            dist[u][v] = int(weight)
+            pre[u][v] = u
+
+    for k in range(n):
+        for u in range(n):
+            for v in range(n):
+                if dist[u][v] > dist[u][k] + dist[k][v]:
+                    dist[u][v] = dist[u][k] + dist[k][v]
+                    pre[u][v] = pre[k][v]
+
+    return dist, pre
+
+
+def floyd_warshall(adjacency_list: list[set[tuple]]) -> tuple[list[list], list[list]]:
+    n = len(adjacency_list)
+    dist = [[math.inf] * n for _ in range(n)]
+    pre: list[list[int | None]] = [[None] * n for _ in range(n)]
+
+    for u in range(n):
+        dist[u][u] = 0
+        for (v, weight) in adjacency_list[u]:
+            dist[u][v] = int(weight)
+            pre[u][v] = u
+
+    for k in range(n):
+        for u in range(n):
+            for v in range(n):
+                if dist[u][v] > dist[u][k] + dist[k][v]:
+                    dist[u][v] = dist[u][k] + dist[k][v]
+                    pre[u][v] = pre[k][v]
+
+    return dist, pre
+
+
 def print_paths(src: int, nodes: list[str], dist: list[float], pre: list[int]):
     for v in range(0, len(dist), len(dist) // 5):
         path = ''
@@ -118,7 +160,7 @@ def test(input_file: str):
     adjacency_list, nodes = build_adjacency_list(data, False, True)
 
     src = 0
-    print(f'number of nodes: {len(adjacency_list)} \t src: {nodes[0]}\n')
+    print(f'number of nodes:{len(adjacency_list)} \t src: {nodes[0]} \n')
 
     timestamp = time.time()
     dist, pre = dijkstra1(src, adjacency_matrix)
@@ -130,10 +172,15 @@ def test(input_file: str):
     print('dijkstra (adjacency list)\t time:', time.time() - timestamp)
     print_paths(src, nodes, dist, pre)
 
+    timestamp = time.time()
+    dist, pre = floyd_warshall(adjacency_list)
+    print('floyd warshall\t\t\t time:', time.time() - timestamp)
+    print_paths(src, nodes, dist[src], pre[src])
+
 
 if __name__ == "__main__":
-    # refine_file('./input/twitter.edges', True)
+    # refine_file('./input/twitter-256497288.edges', True)
     # refine_file('./input/facebook-1912.edges', False)
 
-    test('./input/facebook-weighted.edges')
-    # test('./input/twitter-weighted.edges')
+    # test('./input/twitter-256497288-weighted.edges')
+    test('./input/facebook-1912-weighted.edges')
