@@ -1,159 +1,93 @@
-import collections
+import time
+from collections import defaultdict
 
-import fileHandle, copy, itertools
-from collections import deque
+import file_handle
 
+NEIGHBORS = {
+    'N': ((-1, -1), (0, -1), (1, -1)),
+    'S': ((-1, 1), (0, 1), (1, 1)),
+    'W': ((-1, -1), (-1, 0), (-1, 1)),
+    'E': ((1, -1), (1, 0), (1, 1)),
+}
 
-def parse_input(input_file):
-    data = fileHandle.readfile(input_file).splitlines()
-    plot = deque(deque(line) for line in data)
-    return plot
-
-
-class Grove:
-    def __init__(self, plot):
-        self.plot = plot
-        self.elves = set()
-        # spread2
-        for y in range(len(plot)):
-            for x in range(len(plot[0])):
-                if self.plot[y][x] == '#':
-                    self.elves.add((x, y))
-        # spread1
-        self.number_of_elves = sum(row.count('#') for row in self.plot)
-
-    turn = 3
-    N = [(-1, -1), (0, -1), (1, -1)]
-    S = [(-1, 1), (0, 1), (1, 1)]
-    W = [(-1, -1), (-1, 0), (-1, 1)]
-    E = [(1, -1), (1, 0), (1, 1)]
-    directions = [N, S, W, E]
-
-    def draw_plot(self, plot=None):
-        if plot is None:
-            plot = self.plot
-        for row in plot:
-            print(*row, sep='')
-
-    def expand_plot(self):
-        if '#' in self.plot[0]:
-            self.plot.appendleft(deque('.' * len(self.plot[0])), )
-        if '#' in self.plot[-1]:
-            self.plot.append(deque('.' * len(self.plot[0])), )
-        if '#' in [row[0] for row in self.plot]:
-            for row in self.plot:
-                row.appendleft('.')
-        if '#' in [row[-1] for row in self.plot]:
-            for row in self.plot:
-                row.append('.')
-
-    def isolated(self, x, y):
-        for vx, vy in itertools.product([-1, 0, 1], [-1, 0, 1]):
-            if (vx, vy) != (0, 0) and self.plot[y + vy][x + vx] == '#':
-                return False
-        return True
-
-    def aim(self, x, y):
-        for dr in [(i + self.turn) % 4 for i in range(4)]:
-            for vx, vy in Grove.directions[dr]:
-                if self.plot[y + vy][x + vx] == '#':
-                    break
-            else:
-                vx, vy = Grove.directions[dr][1]
-                return x + vx, y + vy
-        return x, y
-
-    def spread(self):
-        self.turn = (self.turn + 1) % 4
-        self.expand_plot()
-        new_plot = copy.deepcopy(self.plot)
-        for y in range(len(self.plot)):
-            for x in range(len(self.plot[0])):
-                if self.plot[y][x] != '#' or self.isolated(x, y):
-                    continue
-                ax, ay = self.aim(x, y)
-                if (ax, ay) == (x, y):
-                    continue
-                if new_plot[ay][ax] == '.':
-                    new_plot[y][x] = '.'
-                    new_plot[ay][ax] = f'{x}-{y}'
-                elif new_plot[ay][ax] not in ['.', '#', '!']:
-                    xx, yy = new_plot[ay][ax].split('-')
-                    new_plot[int(yy)][int(xx)] = '#'
-                    new_plot[ay][ax] = '!'
-        has_moved = False
-        for y in range(len(new_plot)):
-            for x in range(len(new_plot[0])):
-                if new_plot[y][x] == '!':
-                    new_plot[y][x] = '.'
-                elif new_plot[y][x] not in ['.', '!', '#']:
-                    new_plot[y][x] = '#'
-                    has_moved = True
-        self.plot = new_plot
-        return has_moved
-
-    def isolated2(self, x, y):
-        for vx, vy in itertools.product([-1, 0, 1], [-1, 0, 1]):
-            if (vx, vy) != (0, 0) and (x + vx, y + vy) in self.elves:
-                return False
-        return True
-
-    def aim2(self, x, y):
-        for i in range(4):
-            dr = (i + self.turn) % 4
-            for vx, vy in Grove.directions[dr]:
-                if (x + vx, y + vy) in self.elves:
-                    break
-            else:
-                vx, vy = Grove.directions[dr][1]
-                return x + vx, y + vy
-        return x, y
-
-    def spread2(self):
-        self.turn = (self.turn + 1) % 4
-        positions = collections.defaultdict([1])
-        for x, y in self.elves:
-            if self.isolated2(x, y) or self.aim2(x, y) == (x, y):
-                positions[(x, y)].append((x, y))
-                continue
-            positions[self.aim2(x, y)].append((x, y))
-        print(positions)
-        has_moved = False
-        self.elves.clear()
-        for pos in positions:
-            self.elves.add(pos)
-            has_moved = True
-        return has_moved
+NEIGHBORS_SET = set().union(*NEIGHBORS.values())
 
 
-def puzzle45b(input_file):
-    plot = parse_input(input_file)
-    grove = Grove(plot)
-    print(grove.elves)
-    grove.spread2()
-    print(grove.elves)
+def parse_input(data: str) -> set[tuple]:
+    occupied_cells = {(x, y) for y, row in enumerate(data.splitlines())
+                      for x, cell in enumerate(row) if cell == '#'}
+    return occupied_cells
 
 
-def puzzle45(input_file):
-    plot = parse_input(input_file)
-    grove = Grove(plot)
+def is_isolated(x: int, y: int, occupied_cells: set[tuple]) -> bool:
+    for (dx, dy) in NEIGHBORS_SET:
+        if (x + dx, y + dy) in occupied_cells:
+            return False
+    return True
+    # not efficient: return not any((x + dx, y + dy) in occupied_cells for (dx, dy) in NEIGHBORS_SET)
+
+
+def aim(x: int, y: int, occupied_cells: set[tuple], dirs: str) -> tuple | None:
+    for d in dirs:
+        for (dx, dy) in NEIGHBORS[d]:
+            if (x + dx, y + dy) in occupied_cells:
+                break
+        # not efficient: if any((x + dx, y + dy) in occupied_cells for (dx, dy) in NEIGHBORS[d]): continue
+        else:
+            (dx, dy) = NEIGHBORS[d][1]
+            return x + dx, y + dy
+
+    return None
+
+
+def spread(occupied_cells: set[tuple], dirs: str) -> bool:
+    positions = defaultdict(list)
+    for (x, y) in occupied_cells:
+        if is_isolated(x, y, occupied_cells) or (the_aim := aim(x, y, occupied_cells, dirs)) is None:
+            positions[(x, y)].append((x, y))
+        else:
+            positions[the_aim].append((x, y))
+
+    occupied_cells.clear()
+    settled = True
+    for pos, propose_list in positions.items():
+        if len(propose_list) == 1 and propose_list[0] != pos:
+            occupied_cells.add(pos)
+            settled = False
+        else:
+            occupied_cells.update(positions[pos])
+
+    return not settled
+
+
+def puzzle45(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    occupied_cells = parse_input(data)
+
+    dirs = 'NSWE'
     for _ in range(10):
-        grove.spread()
-    height = len(grove.plot) - ('#' not in grove.plot[0]) - ('#' not in grove.plot[-1])
-    width = len(grove.plot[0]) - ('#' not in [row[0] for row in grove.plot]) \
-            - ('#' not in [row[-1] for row in grove.plot])
-    area = width * height
-    return area - grove.number_of_elves
+        spread(occupied_cells, dirs)
+        dirs = dirs[1:] + dirs[:1]
+
+    x_min, y_min = map(min, zip(*occupied_cells))
+    x_max, y_max = map(max, zip(*occupied_cells))
+    area = (y_max - y_min + 1) * (x_max - x_min + 1)
+
+    return area - len(occupied_cells)
 
 
-def puzzle46(input_file):
-    plot = parse_input(input_file)
-    grove = Grove(plot)
-    rnd = 1
-    while grove.spread():
-        rnd += 1
-    return rnd
+def puzzle46(input_file: str) -> int:
+    data = file_handle.readfile(input_file).strip()
+    occupied_cells = parse_input(data)
+
+    dirs, i = 'NSWE', 1
+    while spread(occupied_cells, dirs):
+        dirs = dirs[1:] + dirs[:1]
+        i += 1
+    return i
 
 
-print('Day #23 Part One:', puzzle45b('input.txt'))
-# print('Day #23 Part Two:', puzzle46('day23.txt'))
+if __name__ == '__main__':
+    print('Day #23, part one:', puzzle45('./input/day23.txt'))
+    timestamp = time.time()
+    print('Day #23, part two:', puzzle46('./input/day23.txt'), f' (runtime: {round(time.time() - timestamp, 1)}s) ')
