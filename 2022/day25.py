@@ -1,63 +1,33 @@
-import fileHandle
+import file_handle
 
 
-def parse_input(input_file):
-    snafu_numbers = fileHandle.readfile(input_file).splitlines()
-    return snafu_numbers
-
-
-def int2base(n, base):
-    sign = -1 if n < 0 else 1
-    n *= sign
-    digits = [] if n else ['0']
-    while n:
-        digits.append(str(n % base))
-        n //= base
-    if sign < 0:
-        digits.append('-')
-    digits.reverse()
-    return ''.join(digits)
-
-
-def base2int(number, base):
-    sign = -1 if number[0] == '-' else 1
-    start = 1 if number[0] == '-' else 0
+def snafu2int(snafu: str) -> int:
     n = 0
-    for i in range(start, len(number)):
-        n = n * base + int(number[i])
-    return sign * n
+    for ch in snafu:
+        n = n * 5 + ('=-012'.index(ch) - 2)
+    return n
 
 
-def int2snafu(n):
-    n5 = int2base(n, base=5)
-    arr = list('0' + n5)
-    for i in range(len(arr) - 1, 0, -1):
-        if arr[i] in ['3', '4', '5']:
-            arr[i] = '=' if arr[i] == '3' else '-' if arr[i] == '4' else '0'
-            arr[i - 1] = str(int(arr[i - 1]) + 1)
-    if arr[0] == '0': arr.pop(0)
-    return ''.join(arr)
+def int2snafu(n: int) -> str:
+    snafu = ''
+    while not -2 <= n <= 2:
+        n, m = divmod(n, 5)
+        if 2 < m:
+            m -= 5
+            n += 1
+        snafu = '=-012'[m + 2] + snafu
+    snafu = '=-012'[n + 2] + snafu
 
-
-def int2snafu2(n):
-    m = len(int2base(n, base=5))
-    med = n + base2int('2' * m, base=5)
-    med5 = int2base(med, base=5)
-    cipher = lambda d: '-' if d == -1 else '=' if d == -2 else str(d)
-    snafu = '' if len(med5) == m else str(med5[0])
-    for i in range(len(med5) - m, len(med5)):
-        snafu += cipher(int(med5[i]) - 2)
     return snafu
 
 
-def puzzle49(input_file):
-    snafu_numbers = parse_input(input_file)
-    decipher = lambda ch: -2 if ch == '=' else -1 if ch == '-' else int(ch)
-    _sum = 0
-    for snafu in snafu_numbers:
-        med5 = [decipher(ch) for ch in snafu]
-        _sum += base2int(med5, base=5)
-    return int2snafu(_sum)
+def puzzle49(input_file: str) -> str:
+    data = file_handle.readfile(input_file).strip()
+    snafu_numbers = data.splitlines()
+
+    sum_ = sum(snafu2int(snafu) for snafu in snafu_numbers)
+    return int2snafu(sum_)
 
 
-print('Day #25 Part One:', puzzle49('day25.txt'))
+if __name__ == '__main__':
+    print('Day #25, part one:', puzzle49('./input/day25.txt'))
