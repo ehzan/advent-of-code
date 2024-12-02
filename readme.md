@@ -1,8 +1,9 @@
 ## Advent of Code 🎄
 
 This repository contains my solutions to the puzzles of [Advent of Code](https://adventofcode.com) for the
-years [2021](https://adventofcode.com/2021), [2022](https://adventofcode.com/2022),
-and [2023](https://adventofcode.com/2023). All solutions are implemented in Python.
+years [2021](https://adventofcode.com/2021), [2022](https://adventofcode.com/2022), [2023](https://adventofcode.com/2023),
+and [2024](https://adventofcode.com/2024). All solutions are implemented
+in Python.
 
 ### Usage
 
